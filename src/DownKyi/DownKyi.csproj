@@ -579,10 +579,13 @@
     <Resource Include="Resources\default_header.jpg" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Brotli.Core\Brotli.Core.csproj">
-      <Project>{3107CD63-E257-455E-AE81-1FD3582B067A}</Project>
-      <Name>Brotli.Core</Name>
-    </ProjectReference>
+    <!-- Brotli.Core was a separate project upstream; its sole output is a copy of
+         Brotli.NET.2.1.1\lib\net45\Brotli.Core.dll. We reference the NuGet package
+         directly to avoid dragging in the missing Brotli.Core.csproj. -->
+    <Reference Include="Brotli.Core">
+      <HintPath>..\packages\Brotli.NET.2.1.1\lib\net45\Brotli.Core.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <ProjectReference Include="..\DownKyi.Core\DownKyi.Core.csproj">
       <Project>{4fde0364-f65b-4812-bfe8-34e886624fbd}</Project>
       <Name>DownKyi.Core</Name>
