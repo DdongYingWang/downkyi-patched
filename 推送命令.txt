@@ -1,0 +1,45 @@
+# ============================================
+# DownKyi 修复版 → 推到 GitHub Actions 编译
+# 仓库: https://github.com/DdongYingWang/downkyi-patched
+# ============================================
+
+# 第 1 步：进入 fork 目录
+cd "/c/Users/hthon/WorkBuddy/2026-08-10-01-43-08/downkyi-fork"
+
+# 第 2 步：初始化 git 仓库（如果是第一次推）
+git init
+git branch -M main
+
+# 第 3 步：设置身份（如果 git 还没配置过全局 user.name / user.email）
+#         只在这台机器第一次用 git 时需要，已经配过可跳过
+git config user.name "DdongYingWang"
+git config user.email "DdongYingWang@users.noreply.github.com"
+
+# 第 4 步：添加远程仓库（先用官方地址）
+git remote remove origin 2>/dev/null   # 清理可能存在的旧 remote
+git remote add origin https://github.com/DdongYingWang/downkyi-patched.git
+
+# 第 5 步：添加并提交所有文件
+git add .
+git commit -m "DownKyi 修复版：多任务崩溃 bug + 全局异常兜底"
+
+# 第 6 步：推送到 GitHub
+#         如果第 6a 步报 "Connection timed out"（你这台机器之前有这问题），改用 6b
+# ----------------------------------------------------------------------
+# 6a) 直接推（首选）
+git push -u origin main
+
+# 6b) 如果 6a 超时，改用 ghproxy.net 镜像（备用方案）
+# git remote set-url origin https://ghproxy.net/https://github.com/DdongYingWang/downkyi-patched.git
+# git push -u origin main
+
+# ============================================
+# 推送成功后，浏览器操作：
+#   1) 打开 https://github.com/DdongYingWang/downkyi-patched
+#   2) 点 "Actions" 标签
+#   3) 左侧选 "Build DownKyi (修复多任务崩溃 bug 版)"
+#   4) 右侧点 "Run workflow" → 选 main 分支 → 绿色按钮
+#   5) 等 5-10 分钟编译完成
+#   6) 在该 run 页面最底部 "Artifacts" 区域下载 DownKyi-patched.zip
+#   7) 解压 → 双击 DownKyi.exe 运行
+# ============================================

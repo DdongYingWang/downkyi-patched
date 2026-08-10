@@ -1,0 +1,74 @@
+name: Build DownKyi (修复多任务崩溃 bug 版)
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup MSBuild (VS 2022)
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Setup NuGet
+        uses: NuGet/setup-nuget@v2
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: src/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('src/**/packages.config') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore NuGet packages
+        run: |
+          nuget restore src/DownKyi.sln -PackagesDirectory src/packages
+          # WebPSharp 0.5.1 was delisted from nuget.org; create a stub so the
+          # csproj's EnsureNuGetPackageBuildImports check passes.
+          if (-Not (Test-Path "src/packages/WebPSharp.0.5.1/build/WebPSharp.targets")) {
+            New-Item -ItemType Directory -Force -Path "src/packages/WebPSharp.0.5.1/build" | Out-Null
+            # Empty stub; we already stripped all WebPSharp usage in StorageCover.cs / StorageHeader.cs.
+            '<Project><Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" /></Project>' | Set-Content "src/packages/WebPSharp.0.5.1/build/WebPSharp.targets"
+          }
+
+      - name: Build DownKyi (Release, AnyCPU)
+        run: |
+          msbuild src/DownKyi.sln /p:Configuration=Release /p:Platform="Any CPU" /m /v:minimal
+
+      - name: Verify DownKyi.exe was produced
+        shell: bash
+        run: |
+          if [ -f "src/DownKyi/bin/Release/DownKyi.exe" ]; then
+            echo "✅ DownKyi.exe built successfully:"
+            ls -la src/DownKyi/bin/Release/DownKyi.exe
+          else
+            echo "❌ DownKyi.exe not found"
+            exit 1
+          fi
+
+      - name: Package release (zip)
+        shell: pwsh
+        run: |
+          # Gather everything the user needs to run DownKyi (bin + arifacts + native exes)
+          $out = "DownKyi-patched-Release"
+          New-Item -ItemType Directory -Force -Path $out | Out-Null
+          Copy-Item -Recurse -Force src/DownKyi/bin/Release/* $out
+          # Compress
+          Compress-Archive -Path $out -DestinationPath "$out.zip" -CompressionLevel Optimal
+          Write-Output "Created $out.zip"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: DownKyi-patched
+          path: DownKyi-patched-Release.zip
+          if-no-files-found: error
+          retention-days: 30
