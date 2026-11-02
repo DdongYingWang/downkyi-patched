@@ -120,7 +120,9 @@ namespace DownKyi.Core.BiliApi.Login
         public static BitmapImage GetLoginQRCode(string url)
         {
             // 设置的参数影响app能否成功扫码
-            Bitmap qrCode = Utils.QRCode.EncodeQRCode(url, 10, 10, null, 0, 0, false);
+            // version=-1 交由 QRCoder 自动选择能容纳该 URL 的最小版本，
+            // 避免 B 站登录 URL 变长后超出 FixedVersion=10 的 119 字节容量导致生成失败。
+            Bitmap qrCode = Utils.QRCode.EncodeQRCode(url, -1, 10, null, 0, 0, false);
 
             MemoryStream ms = new MemoryStream();
             qrCode.Save(ms, System.Drawing.Imaging.ImageFormat.Bmp);

@@ -19,7 +19,10 @@ namespace DownKyi.Core.Utils
         {
             QRCoder.QRCodeGenerator code_generator = new QRCoder.QRCodeGenerator();
 
-            QRCoder.QRCodeData code_data = code_generator.CreateQrCode(msg, QRCoder.QRCodeGenerator.ECCLevel.H/* 这里设置容错率的一个级别 */, true, false, QRCoder.QRCodeGenerator.EciMode.Utf8, version);
+            // version <= 0 视为“自动选版”：QRCoder 约定请求版本 -1 代表自动，
+            // 否则会拿非法版本号去索引版本表导致“索引超出范围”。1~40 为固定版本。
+            int qrVersion = version < 1 ? -1 : version;
+            QRCoder.QRCodeData code_data = code_generator.CreateQrCode(msg, QRCoder.QRCodeGenerator.ECCLevel.H/* 这里设置容错率的一个级别 */, true, false, QRCoder.QRCodeGenerator.EciMode.Utf8, qrVersion);
 
             QRCoder.QRCode code = new QRCoder.QRCode(code_data);
 
