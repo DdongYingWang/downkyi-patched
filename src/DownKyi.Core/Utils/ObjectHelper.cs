@@ -28,10 +28,20 @@ namespace DownKyi.Core.Utils
             string[] strList2 = strList[1].Split('&');
             if (strList2.Count() == 0) { return cookieContainer; }
 
-            // 获取expires
-            string expires = strList2.FirstOrDefault(it => it.Contains("Expires")).Split('=')[1];
-            DateTime dateTime = DateTime.Now;
-            dateTime = dateTime.AddSeconds(int.Parse(expires));
+            // 获取过期时间。
+            // 旧版 B 站扫码回调 URL 含 Expires 参数；新版已不再返回该参数，
+            // 缺失时使用默认 1 年有效期，避免 FirstOrDefault(...).Split 空引用崩溃。
+            int expiresSeconds = 365 * 24 * 3600;
+            var expiresItem = strList2.FirstOrDefault(it => it.StartsWith("Expires=", StringComparison.OrdinalIgnoreCase));
+            if (expiresItem != null)
+            {
+                var expParts = expiresItem.Split('=');
+                if (expParts.Length >= 2 && int.TryParse(expParts[1], out int parsed))
+                {
+                    expiresSeconds = parsed;
+                }
+            }
+            DateTime dateTime = DateTime.Now.AddSeconds(expiresSeconds);
 
             foreach (var item in strList2)
             {
@@ -40,15 +50,17 @@ namespace DownKyi.Core.Utils
 
                 string name = strList3[0];
                 string value = strList3[1];
+                if (string.IsNullOrEmpty(value)) { continue; }
 
                 // 不需要
-                if (name == "Expires" || name == "gourl") { continue; }
+                if (name == "Expires" || name == "expires" || name == "gourl") { continue; }
 
                 // 添加cookie
                 cookieContainer.Add(new Cookie(name, value.Replace(",","%2c"), "/", ".bilibili.com") { Expires = dateTime });
                 Debugging.Console.PrintLine(name + ": " + value + "\t" + cookieContainer.Count);
             }
 
+            Debugging.Console.PrintLine("ParseCookie 解析到 Cookie 数量: " + cookieContainer.Count);
             return cookieContainer;
         }
 
